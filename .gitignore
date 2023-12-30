@@ -1,0 +1,4 @@
+build/
+config/config.h.in
+resources/logo.png
+resources/logo-extand.png
