@@ -1,0 +1,14 @@
+/*
+ * Rename this file to 'config.h.in' to be able to use it and fill in the information
+ */
+
+#pragma once
+
+#define PROJECT_VERSION "@PROJECT_VERSION@"
+#define AUTHOR "@AUTHOR@"
+#define PROJECT_NAME ""
+#define HOSTNAME ""
+#define PORT 
+#define USERNAME ""
+#define PASSWORD ""
+#define DISCORD_APP_ID ""
