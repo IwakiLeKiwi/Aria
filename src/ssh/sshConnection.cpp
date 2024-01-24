@@ -2,18 +2,29 @@
 
 #include "aria.hpp"
 #include "config.h"
-#include "commands.hpp"
+#include "commands/commands.hpp"
+#include "commands/minecraftInfos.hpp"
 
 SOCKET sock = NULL;
 LIBSSH2_SESSION *session = libssh2_session_init();
 WSADATA wsaData;
 
+/* Channel*/
 LIBSSH2_CHANNEL *sshChannel = nullptr;
 void initSSHChannel() {
     sshChannel = libssh2_channel_open_session(session);
 }
-LIBSSH2_CHANNEL *getChannel() {
+LIBSSH2_CHANNEL *getSSHChannel() {
     return sshChannel;
+}
+
+/* SFTP */
+LIBSSH2_SFTP *sftp_session = nullptr;
+void initSFTPChannel() {
+    sftp_session = libssh2_sftp_init(session);
+}
+LIBSSH2_SFTP *getSFTPChannel() {
+    return sftp_session;
 }
 
 /* --------------------------------------------------------------------------------------------------------------- */
@@ -40,7 +51,7 @@ void Aria::ssh::initializeLibs() {
 }
 
 /*
- * Connect in SSH
+ * Connection in SSH
  */
 void Aria::ssh::connectSSH() {
     sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -84,9 +95,12 @@ void Aria::ssh::connectSSH() {
 
 /* ---------------------------------------------------------------------------- */
 
+/*
+ * SSH Commands
+ */
 
-
-void executeCmd(LIBSSH2_CHANNEL* oChannel, const char* cmd) {
+// Default execution
+void executeSSHCommand(LIBSSH2_CHANNEL* oChannel, const char* cmd) {
     try {
         libssh2_channel_write(oChannel, cmd, strlen(cmd));
         libssh2_channel_flush(oChannel);
@@ -101,9 +115,10 @@ void executeCmd(LIBSSH2_CHANNEL* oChannel, const char* cmd) {
     }
 }
  
-void executeCmdOutput(LIBSSH2_CHANNEL* oChannel, const char* cmd) {
+// Execution with output
+void executeSSHCommandWithOutput(LIBSSH2_CHANNEL* oChannel, const char* cmd) {
     try {
-        executeCmd(oChannel, cmd);
+        executeSSHCommand(oChannel, cmd);
         
         char buffer[4096];
         int bytes = libssh2_channel_read(oChannel, buffer, sizeof(buffer));
@@ -133,109 +148,100 @@ void executeCmdOutput(LIBSSH2_CHANNEL* oChannel, const char* cmd) {
     }
 }
 
+/*
+ * Check if a directory exist 
+ */
+bool checkIfDirectoryExist(const std::string& remotePath) {
+    LIBSSH2_SFTP *sftp = getSFTPChannel();
+    std::cout << "[METHOD] SFTP channel with ID: " << sftp << std::endl;
+    LIBSSH2_SFTP_HANDLE *handle = libssh2_sftp_opendir(sftp, remotePath.c_str());
+    if (handle) {
+        std::cout << "Le répertoire existe." << std::endl;
+        libssh2_sftp_closedir(handle);
+        return true;
+    } else {
+        Aria::err("Le répertoire n'existe pas ou l'accès est refusé.");
+    }
+
+
+    return false;
+}
+
+/* 
+ * Create the SSH channel
+ */
 void Aria::ssh::createSSHChannel() {
 
     initSSHChannel();
 
-    LIBSSH2_CHANNEL *channel = getChannel();
+    LIBSSH2_CHANNEL *channel = getSSHChannel();
 
     const char *command = "/bin/bash";
     libssh2_channel_exec(channel, command);
 
-    
-    executeCmd(channel, ("sudo su -" + std::string("\n")).c_str());
+    // Admin mode
+    // /!\ Make sure you don't need the password!
+    try {
+        executeSSHCommand(channel, ("sudo su -" + std::string("\n")).c_str());
+        Aria::info("Root mode OK");
+    } catch (const std::exception& e) {
+        Aria::err("Root mode impossible. Probably need the password");
+    }
 
-    Aria::info("Root mode OK");
-
-    std::cout << "Channel: " << channel << std::endl;
-    /*do {
-        std::cout << "$ ";
-        std::getline(std::cin, cmd);
-
-        if (cmd == "exit") {
-            break;
-        }
-
-        std::istringstream iss(cmd);
-        std::string command;
-        iss >> command;
-
-        if (command == "cd") {
-            // Vérifie s'il y a des arguments après "cd"//
-            std::string arguments;
-            std::getline(iss >> std::ws, arguments);
-
-            if (!arguments.empty()) {
-                std::cout << "La commande 'cd' a été désactivée. Veuillez taper la commande 'go'." << std::endl;
-            } else {
-                std::cout << "La commande 'cd' a été désactivée. Veuillez taper la commande 'go'." << std::endl;
-            }
-        } else if (command == "go") {
-            // Vérifie s'il y a des arguments après "go"
-            std::string arguments;
-            std::getline(iss >> std::ws, arguments);
-
-            if (!arguments.empty()) {
-                // Affiche l'argument
-                std::cout << "Argument pour la commande 'go': " << arguments << std::endl;
-                executeCmd(channel, ("cd " + arguments + "\n").c_str());
-            } else {
-                // Message si aucun argument n'est fourni
-                std::cout << "Aucun argument fourni pour la commande 'go'." << std::endl;
-            }
-        }
-        else if (command == "ls") {
-            executeCmdOutput(channel, (command + " -l" + "\n").c_str());
-            std::cout << "Channel: " << channel << std::endl;
-        } else if (command == "ls -l") {
-            executeCmdOutput(channel, (command + "\n").c_str());
-        } else if (command == "create") {
-            // Vérifie s'il y a au moins deux arguments après "create"
-            std::string arguments;
-            std::getline(iss >> std::ws, arguments);
-
-            std::istringstream argumentsStream(arguments);
-            std::string argument1, argument2;
-
-            // Extrait les deux premiers arguments
-            argumentsStream >> argument1 >> argument2;
-
-            if (!argument1.empty() && !argument2.empty()) {
-                // Traitez les deux arguments ici
-                std::cout << "Arguments pour la commande 'create': " << argument1 << " et " << argument2 << std::endl;
-
-                // Exécute la commande avec les arguments
-                executeCmd(channel, ("cd " + argument1 + "\n").c_str());
-                executeCmd(channel, ("mkdir " + argument2 + "\n").c_str());
-                executeCmdOutput(channel, ("ls" + std::string("\n")).c_str());
-            } else {
-                // Message si les arguments ne sont pas fournis correctement
-                std::cout << "Veuillez spécifier deux arguments pour la commande 'create'." << std::endl;
-            }
-        }
-        else {
-
-            executeCmd(channel, (cmd + "\n").c_str());
-
-        }
-    } while (true);
-//
-    libssh2_channel_close(channel);
-    libssh2_channel_free(channel);*/
-
+    std::cout << "Created channel with ID: " << channel << std::endl;
     Aria::info("Channel created successfully!");
 }
 
-/*void other() {
-    std::string cmd;
-        do {
-            cmd = readLine() + "\n";
-            executeCmd(channel, cmd);
-        } while (cmd != "exit\n");
+/*const char *generateDockerfileContent() {
+                    const char *dockerfileContent = 
+                        "###############################################\n"
+                        "# Utilisation de l'image de base Ubuntu 20.04 #\n"
+                        "###############################################\n"
+                        "FROM ubuntu:latest\n\n"
+                        "#################################\n"
+                        "# Installation des dependances #\n"
+                        "#################################\n\n"
+                        "# Java\n"
+                        "RUN apt-get update && " "JAVA 8" "\n\n"
+                        "# Screen\n"
+                        "RUN apt-get update && apt-get install -y screen";
 
-        libssh2_channel_close(channel);
-        libssh2_channel_free(channel);
-}*/
+                    return dockerfileContent;
+                }*/
+
+void Aria::ssh::createSFTPChannel() {
+    initSFTPChannel();
+
+    LIBSSH2_SFTP *sftp = getSFTPChannel();
+    if (!sftp) {
+        std::cerr << "Erreur lors de l'initialisation de la session SFTP." << std::endl;
+        return;
+    }
+
+    /*const char *remote_file_path = "/appli/docker/minecraft/Dockerfile";
+    LIBSSH2_SFTP_HANDLE *sftp_handle;
+
+    // Ouvrir un fichier en écriture sur le serveur
+    sftp_handle = libssh2_sftp_open(sftp, remote_file_path, LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT | LIBSSH2_FXF_TRUNC, LIBSSH2_SFTP_S_IRUSR | LIBSSH2_SFTP_S_IWUSR);
+
+    if (!sftp_handle) {
+        int error_code = libssh2_session_last_errno(session);
+        char *error_message;
+        libssh2_session_last_error(session, &error_message, NULL, 0);
+
+        std::cerr << "Impossible d'ouvrir le fichier sur le serveur. Code d'erreur : " << error_code << ", Message d'erreur : " << error_message << std::endl;
+
+        libssh2_sftp_shutdown(sftp);
+        return;
+    }
+
+    libssh2_sftp_write(sftp_handle, generateDockerfileContent(), strlen(generateDockerfileContent()));
+
+    // Fermer le fichier
+    libssh2_sftp_close(sftp_handle);*/
+
+    std::cout << "Created SFTP channel with ID: " << sftp << std::endl;
+}
 
 /* ---------------------------------------------------------------------------------- */
 
@@ -252,48 +258,17 @@ void Aria::ssh::closeSession() {
     Aria::info("SSH session successfully closed!");
 }
 
+/*
+ * Close the SSH channel
+ */
 void Aria::ssh::closesSSHChannel() {
-    LIBSSH2_CHANNEL *channel = getChannel();
+    LIBSSH2_CHANNEL *channel = getSSHChannel();
     Aria::info("Close SSH channel...");
     libssh2_channel_close(channel);
     libssh2_channel_free(channel);
     Aria::info("SSH channel successfully closed!");
 }
 
-/* -----------------------------------------------------------------------------------------------------*/
-
-/*
- * Channel fonctionnel
+/* 
+ * Close the SFTP session
  */
-// TODO: refactore le code en plusieur bout et implémenter des commandes perso
-
-/*void executeCommand(const char* command) {
-    LIBSSH2_CHANNEL* channel = libssh2_channel_open_session(session);
-
-    if (channel) {
-        if (command == "/bin/bash") {
-            libssh2_channel_exec(channel, command);
-        }
-        if (libssh2_channel_exec(channel, command) == 0) {
-            char buffer[4096];
-            int rc;
-            
-            // Lire la sortie de la commande
-            while ((rc = libssh2_channel_read(channel, buffer, sizeof(buffer))) > 0) {
-                fwrite(buffer, 1, rc, stdout);
-            }
-
-            // Fermer le canal
-            libssh2_channel_send_eof(channel);
-            libssh2_channel_wait_eof(channel);
-            libssh2_channel_close(channel);
-        } else {
-            std::cerr << "Échec de l'exécution de la commande." << std::endl;
-        }
-
-        // Libérer le canal
-        libssh2_channel_free(channel);
-    } else {
-        std::cerr << "Échec de l'ouverture du canal." << std::endl;
-    }
-}*/
