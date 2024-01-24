@@ -1,7 +1,8 @@
-#ifndef __COLORS__HPP__
-    #define __COLORS__HPP__
+#ifndef UTILS_HPP
+    #define UTILS_HPP
 
     #include <string>
+    #include <unordered_map>
     #include "config.h"
 
     using namespace std;
@@ -85,21 +86,54 @@
             const string WHITE_BACKGROUND_BRIGHT = "\033[0;107m";   // WHITE
         }
 
-        namespace MINECRAFT_VERSION {
-            // Minecraft versions supported
-            const string MIN_MINECRAFT_VERSION = "1.8.9";
-            const string MAX_MINECRAFT_VERSION = "1.20.1";
+        namespace MINECRAFT {
 
-            // All minecraft versions supported
-            const string MC1_8_9 = "1.8.9";
-            const string MC1_12_2 = "1.12.2";
-            const string MC1_14_4 = "1.14.4";
-            const string MC1_15_2 = "1.15.2";
-            const string MC1_16_5 = "1.16.5";
-            const string MC1_17_1 = "1.17.1";
-            const string MC1_18_2 = "1.18.2";
-            const string MC1_19_4 = "1.19.4";
-            const string MC1_20_1 = "1.20.1";
+            namespace MINECRAFT_VERSION {
+                // Minecraft versions supported
+                const std::string MIN_SUPPORTED_MINECRAFT_VERSION = "1.8.9";
+                const std::string MAX_SUPPORTED_MINECRAFT_VERSION = "1.20.1";
+
+                // All minecraft versions supported
+                const std::string MC_1_8_9  = "1.8.9";
+                const std::string MC_1_12_2 = "1.12.2";
+                const std::string MC_1_14_4 = "1.14.4";
+                const std::string MC_1_15_2 = "1.15.2";
+                const std::string MC_1_16_5 = "1.16.5";
+                const std::string MC_1_17_1 = "1.17.1";
+                const std::string MC_1_18_2 = "1.18.2";
+                const std::string MC_1_19_4 = "1.19.4";
+                const std::string MC_1_20_1 = "1.20.1";
+            }
+
+            namespace JAVA_VERSION {
+                const std::string JAVA_8  = "apt-get install -y openjdk-8-jre-headless";
+                const std::string JAVA_11 = "apt-get install -y openjdk-11-jre-headless";
+                const std::string JAVA_16 = "apt-get install -y openjdk-16-jre-headless";
+                const std::string JAVA_17 = "apt-get install -y openjdk-17-jre-headless";
+                const std::string JAVA_20 = "apt-get install -y openjdk-20-jre-headless";
+            }
+        }
+
+        // Function to get the corresponding Java version for a Minecraft version
+        inline std::string getJavaVersionForMinecraft(const std::string& minecraftVersion) {
+            if (minecraftVersion == MINECRAFT::MINECRAFT_VERSION::MC_1_8_9 || 
+                minecraftVersion == MINECRAFT::MINECRAFT_VERSION::MC_1_12_2) {
+                return MINECRAFT::JAVA_VERSION::JAVA_8;
+            } else if (minecraftVersion == MINECRAFT::MINECRAFT_VERSION::MC_1_14_4 || 
+                    minecraftVersion == MINECRAFT::MINECRAFT_VERSION::MC_1_15_2 || 
+                    minecraftVersion == MINECRAFT::MINECRAFT_VERSION::MC_1_16_5) {
+                return MINECRAFT::JAVA_VERSION::JAVA_11;
+            } else if (minecraftVersion == MINECRAFT::MINECRAFT_VERSION::MC_1_17_1) {
+                return MINECRAFT::JAVA_VERSION::JAVA_16;
+            } else if (minecraftVersion == MINECRAFT::MINECRAFT_VERSION::MC_1_18_2 || 
+                    minecraftVersion == MINECRAFT::MINECRAFT_VERSION::MC_1_19_4) {
+                return MINECRAFT::JAVA_VERSION::JAVA_17;
+            } else if (minecraftVersion == MINECRAFT::MINECRAFT_VERSION::MC_1_20_1) {
+                return MINECRAFT::JAVA_VERSION::JAVA_20;
+            } else {
+                // Handle unsupported Minecraft versions
+                return "Unsupported Minecraft Version";
+            }
         }
     }
 

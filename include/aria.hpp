@@ -17,6 +17,7 @@
             void initializeLibs();
             void connectSSH();
             void createSSHChannel();
+            void createSFTPChannel();
             void closesSSHChannel();
             void closeSession();
         }
