@@ -1,31 +1,21 @@
 #include <iostream>
+#include <vector>
 
-#include "commands.hpp"
+#include "commands/commands.hpp"
 #include "utils.hpp"
+#include "config.h"
 
-void help_cmd(const std::string& arg) {
-    if (arg.empty()) {
+void help_cmd(const std::vector<std::string>& args) {
+
+    if (args.empty()) {
+        // Main message
         std::cout
-            << "=============== HELP ===============\n"
-            << "PROJECT NAME: " << PROJECT_NAME << "\n"
-            << "PROJECT VERSION: " << PROJECT_VERSION << "\n"
-            << "PROJECT AUTHOR: " << AUTHOR << "\n"
+            << "\t[Systeme d'aide " << Utils::Colors::BLUE << "Aria" << Utils::Colors::RESET << "]\n"
             << std::endl;
-        
-        std::cout 
-            << "Commandes disponibles:\n"
-            << "1. "
-            << "===================================="
-            << std::endl;
+
     } else {
-        if (arg == "go") {
-            std::cout
-                << "=============== GO ===============\n"
-                << "usage: go <directory>" << "\n"
-                << "=================================="
-                << std::endl;
-        } else {
-            std::cout << "Unknow argument " << arg << std::endl;
-        }
+        const std::string& arg = args[0];
+
+        std::cout << "Arg: " << arg << std::endl;
     }
 }

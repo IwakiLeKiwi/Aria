@@ -1,31 +1,41 @@
 #include <iostream>
 #include <sstream>
 #include <cstring>
+#include <algorithm>
 
 #include "sshGlobals.hpp"
 #include "aria.hpp"
-#include "commands.hpp"
-#include "utils.hpp"
+#include "commands/commands.hpp"
+#include "commands/minecraftInfos.hpp"
 
 using namespace std;
 
-bool isFolderNameAppropriate(const string& folderName) {
-    // Liste de noms de dossier inappropriés
+bool isFolderNameAppropriate(const string &folderName) {
     vector<string> inappropriateNames = {"tmp", "temp", "bin", "root", "system"};
 
-    // Vérifier si le nom du dossier est dans la liste des noms inappropriés
-    for (const string& inappropriateName : inappropriateNames) {
+    for (const string &inappropriateName : inappropriateNames) {
         if (folderName == inappropriateName) {
-            return false; // Le nom du dossier est inapproprié
+            return false;
         }
     }
 
-    return true; // Le nom du dossier est approprié
+    return true;
 }
 
-void create_cmd(const vector<string>& args) {
+int findMinecraftVersionIndex(const std::string &version) {
+    int index = -1;
+    for (int i = 0; i < sizeof(MINECRAFT::MINECRAFT_VERSION::ALL_MC_SUPPORTED_VERSION) / sizeof(MINECRAFT::MINECRAFT_VERSION::ALL_MC_SUPPORTED_VERSION[0]); ++i) {
+        if (version == MINECRAFT::MINECRAFT_VERSION::ALL_MC_SUPPORTED_VERSION[i]) {
+            index = i;
+            break;
+        }
+    }
+    return index;
+}
 
-    LIBSSH2_CHANNEL *channel = getChannel();
+void create_cmd(const vector<string> &args) {
+
+    LIBSSH2_CHANNEL *channel = getSSHChannel();
 
     const string webDirectory = "/appli/docker/web";
     const string mcDirectory = "/appli/docker/minecraft";
@@ -37,7 +47,7 @@ void create_cmd(const vector<string>& args) {
         return;
     }
 
-    const string& arg1 = args[0]; // Nom du dossier
+    const string &arg1 = args[0]; // Nom du dossier
     if (!isFolderNameAppropriate(arg1)) {
         Aria::err("Inappropriate folder name.");
         return;
@@ -55,37 +65,55 @@ void create_cmd(const vector<string>& args) {
         return;
     }
 
-    const string& arg3 = args[2]; // web ou minecraft
+    const string &arg3 = args[2]; // web ou minecraft
 
-    if (arg3 == "minecraft") {
+    if (arg3 == "minecraft" || arg3 == "mc") {
         // Vérifier la présence de l'argument 4 (--version) si arg3 est "minecraft"
         if (args.size() < 4 || args[3] != "--version") {
             cout << "No --version for minecraft" << endl;
             return;
         }
 
-        const string& arg4 = args[3];
+        const string &arg4 = args[3];
         if (args.size() < 5) {
             cout << "No Version for minecraft" << endl;
             return;
         }
-        const string& arg5 = args[4];
-        cout << "Chemin: " << mcDirectory << ", Version: " << arg4 << ", Version: " << arg5 << endl;
 
-        string remoteFolderPath = mcDirectory + "/" + arg1 + "/";
-        //executeCmd(channel, ("mkdir -p " + remoteFolderPath + "\n").c_str());
-        //executeCmd(channel, ("cd " + remoteFolderPath + "\n").c_str());
-    }
+        // Version
+        const string &arg5 = args[4];
 
-    else if (arg3 == "web") {
+        int index = findMinecraftVersionIndex(arg5);
+
+        if (index != -1) { // Version trouvée et existante
+            
+            if (index >= 0 && index <= 26) {
+
+                std::cout << "Version de Java nécessaire : Java 8" << std::endl;
+            } else if (index >= 27 && index <= 40) {
+
+                std::cout << "Version de Java nécessaire : Java 11" << std::endl;
+            } else if (index >= 41 && index <= 42) {
+
+                std::cout << "Version de Java nécessaire : Java 16" << std::endl;
+            } else if (index >= 43 && index <= 50) {
+
+                std::cout << "Version de Java nécessaire : Java 17" << std::endl;
+            } else {
+
+                std::cout << "Version de Java nécessaire : Java 20" << std::endl;
+            }
+        } else { // Version non trouvée et/ou non existante
+            
+            cout << "Vesion de minecraft inexistante ou non trouvee" << endl;
+        }
+    } else if (arg3 == "web") {
         cout << "Chemin: " << webDirectory << endl;
 
-        // Reste du code spécifique à Web...
-    } else {
-        cout << "Out" << endl;
+    }  else {
+        cout << "Other" << endl;
+
     }
-        //executeCmd(channel, ("cd " + arg1 + "\n").c_str());
-        //executeCmd(channel, ("mkdir " + arg2 + "\n").c_str());
 
     /*
      * Commandes
@@ -98,5 +126,4 @@ void create_cmd(const vector<string>& args) {
     if <typeOfContainer> is minecraft: create <folderName> --type minecreaft --version
     -> --version: the version of minecraft
     */
-    
 }

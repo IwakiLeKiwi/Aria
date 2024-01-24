@@ -3,15 +3,21 @@
 
 #include "sshGlobals.hpp"
 #include "aria.hpp"
-#include "commands.hpp"
+#include "commands/commands.hpp"
 
-void go_cmd(const std::string& arg) {
-    LIBSSH2_CHANNEL *channel = getChannel();
-    if (arg.empty()) {
+void go_cmd(const std::vector<std::string>& args) {
+    LIBSSH2_CHANNEL *channel = getSSHChannel();
+
+    if (args.empty()) {
         std::cout
             << "No directory specified"
             << std::endl;
     } else {
-        executeCmd(channel, ("cd " + arg + "\n").c_str());
+        const std::string& arg = args[0];
+        if (checkIfDirectoryExist(arg)) {
+            executeSSHCommand(channel, ("cd " + arg + "\n").c_str());
+        } else {
+            return;
+        }
     }
 }
