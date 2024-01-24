@@ -16,8 +16,6 @@ set (FullOutputDir "${CMAKE_SOURCE_DIR}/bin/${CMAKE_SYSTEM_NAME}${OSBitness}/${C
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY "${FullOutputDir}")
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY "${FullOutputDir}")
 
-configure_file(config/config.h.in ${CMAKE_BINARY_DIR}/config.h)
-
 # Set the executable name
 set(EXECUTABLE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}")
 
@@ -41,6 +39,7 @@ set(SOURCES
 # Include directories for the executable
 include_directories(include)
 include_directories(${CMAKE_BINARY_DIR})
+configure_file(config/config.h.in ${CMAKE_BINARY_DIR}/config.h)
 
 # Create an executable
 add_executable(${EXECUTABLE_NAME} ${SOURCES})
