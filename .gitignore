@@ -1,4 +1,6 @@
 build/
+libs/
+bin/
 config/config.h.in
 resources/logo.png
 resources/logo-extand.png
