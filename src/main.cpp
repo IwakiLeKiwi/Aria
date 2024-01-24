@@ -2,7 +2,7 @@
 #include <chrono>
 
 #include "aria.hpp"
-#include "commands.hpp"
+#include "commands/commands.hpp"
 #include "sshGlobals.hpp"
 
 #pragma comment(lib, "ws2_32.lib")
@@ -25,11 +25,11 @@ int main() {
     Aria::ssh::connectSSH();
     Aria::info("Creating SSH channel...");
     Aria::ssh::createSSHChannel();
-    startCommandPrompt();
+    Aria::ssh::createSFTPChannel();
+    Commands::startCommandPrompt();
     Aria::ssh::closeSession();
     
     Aria::info("Aria is shutting down...");
     
     return 0;
 }
-

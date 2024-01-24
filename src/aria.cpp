@@ -20,7 +20,7 @@ void Aria::initStartupMessages() {
 /_/   \_\|_| \_\|___|/_/   \_\)" << Utils::Colors::RESET << endl;
 cout << 
      Utils::Colors::BLUE_BOLD_BRIGHT << ":: Aria ::"
-     << "        " 
+     << "\t  "
      << Utils::Colors::YELLOW << "(" << PROJECT_VERSION << ")"
      << Utils::Colors::RESET << endl;
 cout << Utils::Colors::CYAN 
