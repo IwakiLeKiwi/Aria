@@ -3,6 +3,7 @@
 
 #include "aria.hpp"
 #include "commands/commands.hpp"
+#include "utils.hpp"
 
 using namespace std;
 
@@ -14,11 +15,12 @@ map<string, CommandFunction> commandMap;
  */
 void initializeAriaCommands() {
     commandMap["help"] = help_cmd;
-    commandMap["go"] = go_cmd;
+    commandMap["cd"] = cd_cmd;
     commandMap["del"] = del_cmd;
     commandMap["info"] = info_cmd;
     commandMap["ls"] = ls_cmd;
     commandMap["create"] = create_cmd;
+    commandMap["version"] = version_cmd;
 }
 
 void executeCommand(const string& command, const vector<string>& arguments) {
@@ -40,7 +42,7 @@ void Commands::startCommandPrompt() {
 
     string cmd;
     do {
-        cout << "> ";
+        cout << Utils::Colors::RESET <<  "> ";
         getline(cin, cmd);
 
         istringstream iss(cmd);
@@ -55,7 +57,8 @@ void Commands::startCommandPrompt() {
 
         if (command == "exit" || command == "quit" || command == "bye") {
             Aria::info("SSH connection terminated.");
-            Aria::ssh::closesSSHChannel();
+            Aria::ssh::closeSSHChannel();
+            Aria::ssh::closeSFTPChannel();
             break;
 
         } else {

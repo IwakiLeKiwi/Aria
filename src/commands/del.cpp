@@ -19,8 +19,12 @@ void del_cmd(const std::vector<std::string>& args) {
         std::getline(std::cin, userInput);
 
         if (userInput == "Y" || userInput == "y") {
-            executeSSHCommand(channel, ("rm -r " + arg + "\n").c_str());
-            std::cout << "Directory '" << arg << "' has been deleted." << std::endl;
+            if (checkIfDirectoryExist(arg)) {
+                executeSSHCommand(channel, ("rm -r " + arg + std::string("\n")).c_str());
+                std::cout << "Directory '" << arg << "' has been deleted." << std::endl;
+            } else {
+                return;
+            }
         } else {
             std::cout << "Deletion aborted." << std::endl;
         }

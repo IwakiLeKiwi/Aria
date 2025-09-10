@@ -5,7 +5,7 @@
 #include "aria.hpp"
 #include "commands/commands.hpp"
 
-void go_cmd(const std::vector<std::string>& args) {
+void cd_cmd(const std::vector<std::string>& args) {
     LIBSSH2_CHANNEL *channel = getSSHChannel();
 
     if (args.empty()) {

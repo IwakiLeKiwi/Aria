@@ -1,5 +1,6 @@
 #include <iostream>
 #include <chrono>
+#include <locale>
 
 #include "aria.hpp"
 #include "commands/commands.hpp"
@@ -13,6 +14,8 @@ using namespace std;
 
 int main() {
 
+    setlocale(LC_ALL, "en_US.UTF-8");
+
     Aria::initStartupMessages();
 
     Aria::info("Aria booting...");
@@ -25,6 +28,7 @@ int main() {
     Aria::ssh::connectSSH();
     Aria::info("Creating SSH channel...");
     Aria::ssh::createSSHChannel();
+    Aria::info("Creating SFTP session...");
     Aria::ssh::createSFTPChannel();
     Commands::startCommandPrompt();
     Aria::ssh::closeSession();

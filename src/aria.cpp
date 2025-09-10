@@ -30,26 +30,6 @@ cout << Utils::Colors::CYAN
      << "============================================\n" << Utils::Colors::RESET << endl;
 }
 
-void Aria::info(const char* msg) {
-    cout 
-        << "[" << Utils::Colors::GREEN << "INFO" << Utils::Colors::RESET << "] " << msg << endl;
-}
-
-void Aria::warn(const char* msg) {
-    cout 
-        << "[" << Utils::Colors::YELLOW << "WARNING" << Utils::Colors::RESET << "] " << msg << endl;
-}
-
-void Aria::err(const char* msg) {
-    cout 
-        << "[" << Utils::Colors::RED << "ERROR" << Utils::Colors::RESET << "] " << msg << endl;
-}
-
-void Aria::log(const char* msg) {
-    cout 
-        << "[" << Utils::Colors::PURPLE << "LOG" << Utils::Colors::RESET << "] " << msg << endl;
-}
-
 void Aria::initializeDiscord() {
     discord->initializeDiscordLibs();
     discord->update();

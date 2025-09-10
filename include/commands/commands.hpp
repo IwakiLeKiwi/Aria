@@ -3,21 +3,20 @@
     
     #include <vector>
     #include <functional>
-    #include <unordered_map>
     #include "sshGlobals.hpp"
 
     namespace Commands {
         void startCommandPrompt();
     }
 
-    void executeSSHCommand(LIBSSH2_CHANNEL* oChannel, const char* cmd);
-    void executeSSHCommandWithOutput(LIBSSH2_CHANNEL* oChannel, const char* cmd);
-
-    // Command list
+    // Basics Commands
     void ls_cmd(const std::vector<std::string>& args);
     void help_cmd(const std::vector<std::string>& args);
-    void go_cmd(const std::vector<std::string>& args);
+    void cd_cmd(const std::vector<std::string>& args);
     void del_cmd(const std::vector<std::string>& args);
     void info_cmd(const std::vector<std::string>& args);
+    void version_cmd(const std::vector<std::string>& args);
+    // Docker commands
     void create_cmd(const std::vector<std::string>& args);
+    void start_cmd(const std::vector<std::string>& args);
 #endif

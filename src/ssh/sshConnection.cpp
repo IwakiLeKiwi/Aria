@@ -3,7 +3,7 @@
 #include "aria.hpp"
 #include "config.h"
 #include "commands/commands.hpp"
-#include "commands/minecraftInfos.hpp"
+#include "sshGlobals.hpp"
 
 SOCKET sock = NULL;
 LIBSSH2_SESSION *session = libssh2_session_init();
@@ -26,7 +26,7 @@ void initSFTPChannel() {
 LIBSSH2_SFTP *getSFTPChannel() {
     return sftp_session;
 }
-
+using namespace std;
 /* --------------------------------------------------------------------------------------------------------------- */
 
 /*
@@ -95,78 +95,6 @@ void Aria::ssh::connectSSH() {
 
 /* ---------------------------------------------------------------------------- */
 
-/*
- * SSH Commands
- */
-
-// Default execution
-void executeSSHCommand(LIBSSH2_CHANNEL* oChannel, const char* cmd) {
-    try {
-        libssh2_channel_write(oChannel, cmd, strlen(cmd));
-        libssh2_channel_flush(oChannel);
-
-        Sleep(10); 
-    } catch (const std::system_error& e) {
-        std::cout << "Erreur lors de l'éxécution de la commande !" << e.what() << std::endl;
-    } catch (const std::exception& e) {
-        std::cout << "Une exception s'est produite lors de l'éxécution de la commande !" << e.what() << std::endl;
-    } catch (...) {
-        std::cout << "Une exception inattendue s'est produite lors de l'éxécution de la commande !" << std::endl;
-    }
-}
- 
-// Execution with output
-void executeSSHCommandWithOutput(LIBSSH2_CHANNEL* oChannel, const char* cmd) {
-    try {
-        executeSSHCommand(oChannel, cmd);
-        
-        char buffer[4096];
-        int bytes = libssh2_channel_read(oChannel, buffer, sizeof(buffer));
-
-        if (bytes > 0) {
-            std::cout.write(buffer, bytes);
-            std::cout.flush();
-        } else if (bytes == 0) {
-            Sleep(10);
-        } else {
-            int exit_code = 0;
-            libssh2_channel_send_eof(oChannel);
-            libssh2_channel_wait_eof(oChannel);
-
-            if (libssh2_channel_get_exit_status(oChannel) != 0) {
-                std::cerr << "La commande a échoué avec le code de sortie : " << libssh2_channel_get_exit_status(oChannel) << std::endl;
-            }
-        }
-
-        Sleep(10);
-    } catch (const std::system_error& e) {
-        std::cout << "Erreur lors de l'éxécution de la commande !" << e.what() << std::endl;
-    } catch (const std::exception& e) {
-        std::cout << "Une exception s'est produite lors de l'éxécution de la commande !" << e.what() << std::endl;
-    } catch (...) {
-        std::cout << "Une exception inattendue s'est produite lors de l'éxécution de la commande !" << std::endl;
-    }
-}
-
-/*
- * Check if a directory exist 
- */
-bool checkIfDirectoryExist(const std::string& remotePath) {
-    LIBSSH2_SFTP *sftp = getSFTPChannel();
-    std::cout << "[METHOD] SFTP channel with ID: " << sftp << std::endl;
-    LIBSSH2_SFTP_HANDLE *handle = libssh2_sftp_opendir(sftp, remotePath.c_str());
-    if (handle) {
-        std::cout << "Le répertoire existe." << std::endl;
-        libssh2_sftp_closedir(handle);
-        return true;
-    } else {
-        Aria::err("Le répertoire n'existe pas ou l'accès est refusé.");
-    }
-
-
-    return false;
-}
-
 /* 
  * Create the SSH channel
  */
@@ -175,6 +103,9 @@ void Aria::ssh::createSSHChannel() {
     initSSHChannel();
 
     LIBSSH2_CHANNEL *channel = getSSHChannel();
+    if (!channel) {
+        Aria::err("Erreur lors de l'initialisation du channel SSH.");
+    }
 
     const char *command = "/bin/bash";
     libssh2_channel_exec(channel, command);
@@ -188,59 +119,21 @@ void Aria::ssh::createSSHChannel() {
         Aria::err("Root mode impossible. Probably need the password");
     }
 
-    std::cout << "Created channel with ID: " << channel << std::endl;
     Aria::info("Channel created successfully!");
 }
 
-/*const char *generateDockerfileContent() {
-                    const char *dockerfileContent = 
-                        "###############################################\n"
-                        "# Utilisation de l'image de base Ubuntu 20.04 #\n"
-                        "###############################################\n"
-                        "FROM ubuntu:latest\n\n"
-                        "#################################\n"
-                        "# Installation des dependances #\n"
-                        "#################################\n\n"
-                        "# Java\n"
-                        "RUN apt-get update && " "JAVA 8" "\n\n"
-                        "# Screen\n"
-                        "RUN apt-get update && apt-get install -y screen";
-
-                    return dockerfileContent;
-                }*/
 
 void Aria::ssh::createSFTPChannel() {
+
     initSFTPChannel();
 
     LIBSSH2_SFTP *sftp = getSFTPChannel();
     if (!sftp) {
-        std::cerr << "Erreur lors de l'initialisation de la session SFTP." << std::endl;
+        Aria::err("Erreur lors de l'initialisation de la session SFTP.");
         return;
     }
 
-    /*const char *remote_file_path = "/appli/docker/minecraft/Dockerfile";
-    LIBSSH2_SFTP_HANDLE *sftp_handle;
-
-    // Ouvrir un fichier en écriture sur le serveur
-    sftp_handle = libssh2_sftp_open(sftp, remote_file_path, LIBSSH2_FXF_WRITE | LIBSSH2_FXF_CREAT | LIBSSH2_FXF_TRUNC, LIBSSH2_SFTP_S_IRUSR | LIBSSH2_SFTP_S_IWUSR);
-
-    if (!sftp_handle) {
-        int error_code = libssh2_session_last_errno(session);
-        char *error_message;
-        libssh2_session_last_error(session, &error_message, NULL, 0);
-
-        std::cerr << "Impossible d'ouvrir le fichier sur le serveur. Code d'erreur : " << error_code << ", Message d'erreur : " << error_message << std::endl;
-
-        libssh2_sftp_shutdown(sftp);
-        return;
-    }
-
-    libssh2_sftp_write(sftp_handle, generateDockerfileContent(), strlen(generateDockerfileContent()));
-
-    // Fermer le fichier
-    libssh2_sftp_close(sftp_handle);*/
-
-    std::cout << "Created SFTP channel with ID: " << sftp << std::endl;
+    Aria::info("SFTP session created successfully!");
 }
 
 /* ---------------------------------------------------------------------------------- */
@@ -261,7 +154,7 @@ void Aria::ssh::closeSession() {
 /*
  * Close the SSH channel
  */
-void Aria::ssh::closesSSHChannel() {
+void Aria::ssh::closeSSHChannel() {
     LIBSSH2_CHANNEL *channel = getSSHChannel();
     Aria::info("Close SSH channel...");
     libssh2_channel_close(channel);
@@ -270,5 +163,11 @@ void Aria::ssh::closesSSHChannel() {
 }
 
 /* 
- * Close the SFTP session
+ * Close the SFTP channel
  */
+void Aria::ssh::closeSFTPChannel() {
+    LIBSSH2_SFTP *sftp = getSFTPChannel();
+    Aria::info("Close SFTP channel...");
+    libssh2_sftp_shutdown(sftp);
+    Aria::info("SFTP channel successfully closed!");
+}
