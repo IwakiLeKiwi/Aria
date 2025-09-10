@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.12)
 # Project name
 project(ARIA)
 
-set(PROJECT_VERSION "1.0.0-DEV")
+set(PROJECT_VERSION "1.0.1-DEV")
 set(AUTHOR "Iwaki")
 
 set(OSBitness 32)
@@ -26,23 +26,30 @@ set(CMAKE_CXX_STANDARD 17)
 set(SOURCES
     src/main.cpp
     src/aria.cpp
-    src/commands/commands.cpp
+    src/commands/commandManager.cpp
     src/commands/ls.cpp
-    src/commands/go.cpp
+    src/commands/cd.cpp
     src/commands/del.cpp
     src/commands/info.cpp
     src/commands/help.cpp
-    src/commands/create.cpp
+    src/commands/version.cpp
+    src/commands/docker/create.cpp
     src/integration/discord.cpp
-    src/ssh/sshConnection.cpp)
+    src/json/jsonCommands.cpp
+    src/ssh/sshConnection.cpp
+    src/ssh/sshCommands.cpp
+    src/utils/progressBar.cpp)
     
 # Include directories for the executable
-include_directories(include)
-include_directories(${CMAKE_BINARY_DIR})
+include_directories("${CMAKE_SOURCE_DIR}/include")
+include_directories("${CMAKE_SOURCE_DIR}/includes")
 configure_file(config/config.h.in ${CMAKE_BINARY_DIR}/config.h)
+include_directories("${CMAKE_BINARY_DIR}")
+link_directories("${CMAKE_SOURCE_DIR}/libs")
 
 # Create an executable
 add_executable(${EXECUTABLE_NAME} ${SOURCES})
+target_link_libraries(${EXECUTABLE_NAME} PRIVATE libssh2 libcrypto zlib discord-rpc)
 
 add_custom_command(
     TARGET ${EXECUTABLE_NAME}

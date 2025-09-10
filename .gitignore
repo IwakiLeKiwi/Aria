@@ -1,5 +1,4 @@
 build/
-libs/
 bin/
 config/config.h.in
 config/config.json
