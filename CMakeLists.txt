@@ -42,7 +42,7 @@ set(SOURCES
     
 # Include directories for the executable
 include_directories("${CMAKE_SOURCE_DIR}/include")
-include_directories("${CMAKE_SOURCE_DIR}/includes")
+include_directories("${CMAKE_SOURCE_DIR}/vendor")
 configure_file(config/config.h.in ${CMAKE_BINARY_DIR}/config.h)
 include_directories("${CMAKE_BINARY_DIR}")
 link_directories("${CMAKE_SOURCE_DIR}/libs")
